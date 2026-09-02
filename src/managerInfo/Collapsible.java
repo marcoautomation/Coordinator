@@ -36,7 +36,7 @@ public final class Collapsible extends JPanel{
     add(body,BorderLayout.CENTER);
     setOpen(open);
   }
-  private void setOpen(boolean open){
+  public void setOpen(boolean open){
     body.setVisible(open);
     head.setText((open ? "[-] " : "[+] ")+title);
     revalidate();

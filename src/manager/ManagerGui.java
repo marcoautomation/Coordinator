@@ -81,11 +81,11 @@ final class ManagerGui {
     });
     setIcons();
     frame.setLocationByPlatform(true);
-    frame.setSize(preferredSize());
+    frame.setSize(preferredSize());//the size a restore (un-maximize) falls back to
+    frame.setExtendedState(Frame.MAXIMIZED_BOTH);
   }
-  //760x900 is tall enough that a small project's compile-then-run-all output is
-  //visible without scrolling, but capped against the usable screen so the window
-  //itself never lands partly off-screen on a shorter display.
+  //760x900 is the restore size if un-maximized, capped against the usable
+  //screen so it never lands partly off-screen on a shorter display.
   private static Dimension preferredSize(){
     var avail= GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
     return new Dimension(Math.min(760, avail.width), Math.min(900, avail.height));
@@ -149,10 +149,15 @@ final class ManagerGui {
     var info= open.get(folder);
     return info != null && info.session().running().isPresent();
   }
+  //A divider dragged to the icon-grid-only edge (see FolderInfo's zero minimum
+  //size) would otherwise restore to that same edge position on every future
+  //selection, silently reopening each panel too narrow to see.
+  private static final int minPanelWidth= 300;
   private void showFolder(Optional<Path> folder){
     if (folder.isEmpty()){ hidePanel(); return; }
     shown= open.computeIfAbsent(folder.get(), f->new FolderInfo(data, f, worker, this::foldersChangedHere));
     var where= split.getDividerLocation();
+    if (split.getWidth() > 0){ where= Math.min(where, split.getWidth()-minPanelWidth); }
     split.setLeftComponent(folders);
     split.setRightComponent(shown.panel());
     body.removeAll();
