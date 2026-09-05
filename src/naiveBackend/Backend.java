@@ -37,6 +37,8 @@ public class Backend{
   private static final TName mainName= new TName("base.Main", 0,Pos.unknown);
   private static final TName systemName= new TName("base._System", 0,Pos.unknown);
   boolean implementsBaseMain(Literal l){ return l.cs().stream().anyMatch(c->c.name().equals(mainName)); }
+  private static final TName inMemoryLogName= new TName("base.InMemoryLog", 1,Pos.unknown);
+  boolean implementsInMemoryLog(Literal l){ return l.cs().stream().anyMatch(c->c.name().equals(inMemoryLogName)); }
   public List<Consumer<Path>> produceJavaCode(){
     docs.packageLocation(pkgName,out.getParent().resolve(pkgName+".html"));
     cleanOutFolder();
@@ -55,6 +57,10 @@ public class Backend{
       .a("public interface "+iface+extendsClause(l)+"{\n");
     for (var m:l.ms()){ emitTopMethod(sb, l, m, abstractOnly); }
     var hasInstance= hasInstance(l, abstractOnly);
+    if (hasInstance && implementsInMemoryLog(l)){
+      sb.a("  java.util.ArrayList<Object> _logStore= new java.util.ArrayList<>();\n");
+      sb.a("  default java.util.ArrayList<Object> _log(){ return _logStore; }\n");
+    }
     if (hasInstance){ sb.a("  "+iface+" instance= new "+iface+"(){};"); }
     Fs.writeUtf8(ifaceFile(l, out), sb.a("}").toString());
     if (hasInstance && implementsBaseMain(l)){ mains.put(l.name().s(), iface); }
