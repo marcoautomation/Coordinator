@@ -88,17 +88,19 @@ top level main
   @Test void testingStandardLibrary(){ testOk("testingStandardLibrary");}
   @Test void testDocs(){ testOk("testDocs");}
   @Test void testAssets(){ testOk("testAssets");}
+  private Path theOneLogFile(Path dir, String prefix) throws IOException{
+    try (var files= Files.list(dir)){
+      var found= files.filter(p-> p.getFileName().toString().startsWith(prefix)).toList();
+      Assertions.assertEquals(1, found.size(), found.toString());
+      return found.get(0);
+    }
+  }
   @Test void testLogging() throws InterruptedException, IOException{
     var root= ResolveResource.integrationTests.resolve("testLogging");
     Fs.rmTree(root.resolve(".out"));
     testOk("testLogging");
-    var logDir= root.resolve(".out").resolve("logs").resolve("_base");
-    List<Path> logs;
-    try (var files= Files.list(logDir)){
-      logs= files.filter(p-> p.getFileName().toString().startsWith("log$")).toList();
-    }
-    Assertions.assertEquals(1, logs.size(), logs.toString());
-    var content= Fs.readUtf8(logs.get(0));
+    var logDir= root.resolve(".out").resolve("logs");
+    var content= Fs.readUtf8(theOneLogFile(logDir.resolve("_base"), "log$"));
     utils.Err.strCmp("""
 [###] starting logging example
 [###] processed item 1
@@ -106,6 +108,8 @@ top level main
 [###] processed item 3
 [###] finished
 """, content);
+    var pkgContent= Fs.readUtf8(theOneLogFile(logDir.resolve("logging"), "logging$"));
+    utils.Err.strCmp("[###] package-specific log entry\n", pkgContent);
   }
   // testingNorms holds no fearless unit tests: a cache hit and a recomputation return
   // the very same value, so nothing about caching can be asserted on results alone.
