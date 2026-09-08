@@ -73,8 +73,9 @@ public class RunIntegration {
     Assertions.assertTrue(fails.isEmpty(), ()->"Fearless unit tests failed in "+name+":\n"+String.join("\n",fails));
   }
   static String xmlAttr(String s){ return s.replace("&","&amp;").replace("<","&lt;").replace("\"","&quot;"); }
-  static void writeJUnitReport(String name){
-    var logs= managerInfo.LogFiles.list(ResolveResource.integrationTests.resolve(name)).stream()
+  static void writeJUnitReport(String name){ writeJUnitReport(name, ResolveResource.integrationTests.resolve(name)); }
+  static void writeJUnitReport(String name, Path root){
+    var logs= managerInfo.LogFiles.list(root).stream()
       .filter(e->e.path().getFileName().toString().startsWith("unit_test_log"))
       .toList();
     if (logs.isEmpty()){ return; }
@@ -125,6 +126,7 @@ top level main
     Fs.ensureDir(genDir);
     Fs.writeUtf8(genDir.resolve("_rank_app.fear"), Fs.readUtf8(baseTestFile));
     var out= coordinator().main(root);
+    writeJUnitReport("baseGeneratedExamples", root);
     var fails= out.lines().filter(l->l.startsWith("Test failure ")).toList();
     Assertions.assertTrue(fails.isEmpty(), ()->"Fearless unit tests failed in base's generated examples:\n"+String.join("\n",fails));
   }
